@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FileItem(BaseModel):
+    """Public representation of a stored file (same shape as before)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -21,7 +23,13 @@ class FileItem(BaseModel):
 
 
 class FileUpdate(BaseModel):
-    title: str
+    """PATCH payload.
+
+    ``title`` is length-validated so oversized values return HTTP 422 instead
+    of surfacing as a database error (HTTP 500).
+    """
+
+    title: str = Field(min_length=1, max_length=255)
 
 
 class AlertItem(BaseModel):
@@ -32,3 +40,4 @@ class AlertItem(BaseModel):
     level: str
     message: str
     created_at: datetime
+

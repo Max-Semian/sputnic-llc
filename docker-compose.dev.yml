@@ -1,38 +1,55 @@
 services:
   backend:
     build: ./backend
-    command: uvicorn src.app:app --host 0.0.0.0 --reload --port 8000
+    command: uvicorn src.main:app --host 0.0.0.0 --reload --port 8000
     container_name: backend
     volumes:
       - ./backend:/backend
+      - backend-storage:/backend/storage
     env_file: ".env.dev"
     ports:
       - "8000:8000"
     depends_on:
-      - backend-db
+      backend-db:
+        condition: service_healthy
 
   backend-worker:
     build: ./backend
-    command: [ 'celery', '-A', 'src.tasks.celery_app', 'worker', '-l', 'info' ]
+    command: [ 'celery', '-A', 'src.worker.tasks.celery_app', 'worker', '-l', 'info' ]
     container_name: backend-worker
     env_file: ".env.dev"
     volumes:
       - ./backend:/backend
+      - backend-storage:/backend/storage
     depends_on:
-      - backend-db
+      backend-db:
+        condition: service_healthy
+      backend-redis:
+        condition: service_started
 
   backend-db:
     image: postgres:16-alpine
     container_name: backend-db
     ports:
+      # Host port 5433 -> container 5432 (Postgres listens on 5432 by default).
       - "5433:5432"
     env_file: ".env.dev"
     volumes:
       - backend-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d test" ]
+      interval: 3s
+      timeout: 3s
+      retries: 15
 
   backend-redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: backend-redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 3s
+      retries: 15
 
   frontend:
     build:
@@ -44,3 +61,5 @@ services:
 
 volumes:
   backend-db-volume:
+  backend-storage:
+
