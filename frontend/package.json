@@ -2,17 +2,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build"
+    "build": "next build",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
-    "next": "latest",
+    "next": "^15.3.3",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
     "@types/node": "^20.11.0",
-    "typescript": "^5.4.0"
+    "@vitejs/plugin-react": "^4.3.1",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^3.2.0"
   }
 }
