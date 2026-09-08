@@ -14,7 +14,7 @@ docker compose -f docker-compose.dev.yml up --build
 docker exec -it backend alembic upgrade head
 ```
 
-- Фронтенд: http://localhost:3000/test
+- Фронтенд: http://localhost:3000/ (также доступен по старому адресу http://localhost:3000/test)
 - Бэкенд API / Swagger: http://localhost:8000/docs
 - PostgreSQL с хоста: `localhost:5433` (`postgres` / `postgres`, база `test`)
 - При первом запуске Postgres инициализируется сам (healthcheck'и настроены).
