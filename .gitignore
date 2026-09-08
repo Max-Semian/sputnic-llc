@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv
+.idea
+**/.DS_Store
+
+# Node
+node_modules/
+.next/
+
+# Runtime artifacts
+backend/storage/*
