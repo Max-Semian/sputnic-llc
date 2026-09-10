@@ -2,8 +2,8 @@
 
 import pytest
 
-from src.errors import EmptyFileError, FileTooLargeError, StorageError
-from src.storage import LocalStorage
+from src.core.errors import EmptyFileError, FileTooLargeError, StorageError
+from src.infrastructure.storage import LocalStorage
 
 
 async def _chunks(*parts: bytes):
@@ -37,7 +37,7 @@ async def test_write_temp_enforces_max_size_and_cleans_up(tmp_path):
 
 async def test_write_temp_uses_bounded_chunks(tmp_path, monkeypatch):
     """The optimization: the file is streamed, never buffered whole in memory."""
-    from src.storage import asyncio
+    import asyncio
 
     storage = LocalStorage(tmp_path, max_size=1000)
     written: list[int] = []

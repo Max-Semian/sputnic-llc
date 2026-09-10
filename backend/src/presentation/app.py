@@ -1,24 +1,24 @@
-"""FastAPI application factory.
+"""FastAPI application factory (presentation layer).
 
-The previous single module ``app.py``/``service.py`` mix created engines as
-module-level side effects. Now the app is assembled from explicit layers:
-``config`` -> ``api`` routes -> ``services`` -> ``storage``/``db``.
+Wiring order: core config -> infrastructure (storage, DB, UoW) -> application
+services -> routes. Dependencies are attached to ``app.state`` and injected via
+``src.presentation.deps``.
 """
 
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.api.routes import router
-from src.config import Settings, get_settings
-from src.db import make_async_session_factory
-from src.errors import AppError
-from src.storage import LocalStorage
-
-logger = logging.getLogger(__name__)
+from src.application.services.alert_service import AlertService
+from src.application.services.file_service import FileService
+from src.core.config import Settings, get_settings
+from src.core.errors import AppError
+from src.infrastructure.db import make_async_session_factory
+from src.infrastructure.repositories import SqlAlchemyUnitOfWork
+from src.infrastructure.storage import LocalStorage
+from src.presentation.routes import router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -32,10 +32,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         session_factory, engine = make_async_session_factory(settings.async_database_url)
+        uow_factory = lambda: SqlAlchemyUnitOfWork(session_factory)  # noqa: E731
+
         app.state.settings = settings
         app.state.session_factory = session_factory
         app.state.engine = engine
         app.state.storage = storage
+        app.state.file_service = FileService(uow_factory, storage)
+        app.state.alert_service = AlertService(uow_factory)
         try:
             yield
         finally:
@@ -44,7 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="File sharing MVP",
         description="Upload files, scan them for suspicious content, receive alerts.",
-        version="0.2.0",
+        version="0.3.0",
         lifespan=lifespan,
     )
     app.add_middleware(

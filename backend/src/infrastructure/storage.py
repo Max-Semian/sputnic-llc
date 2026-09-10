@@ -1,18 +1,17 @@
-"""Local filesystem storage.
+"""Local filesystem storage (infrastructure layer).
 
-Writes are streamed in bounded-size chunks and committed atomically
-(write-to-temp + ``os.replace``), which replaces the previous
-``upload_file.read()`` + ``write_bytes()`` pattern that buffered the entire file
-in memory. The directory layout and file naming (uuid + original suffix) stay
-identical to the previous implementation.
+Streams writes in bounded chunks and commits atomically (temp file +
+``os.replace``); implements the ``FileStorage`` protocol from the application
+layer, so an S3-backed implementation can replace it without touching services.
 """
 
 import asyncio
 import logging
+import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from src.errors import EmptyFileError, FileTooLargeError, StorageError
+from src.core.errors import EmptyFileError, FileTooLargeError, StorageError
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +23,7 @@ class LocalStorage:
         self.max_size = max_size
         self.chunk_size = chunk_size
 
-    # ------------------------------------------------------------------
-    # path safety
-    # ------------------------------------------------------------------
+    # --- path safety ---------------------------------------------------
     def _resolve(self, stored_name: str) -> Path:
         if not stored_name or stored_name != Path(stored_name).name:
             raise StorageError(f"Unsafe stored name: {stored_name!r}")
@@ -46,23 +43,18 @@ class LocalStorage:
             raise StorageError(f"Could not delete stored file: {exc}") from exc
 
     def open_binary(self, stored_name: str):
-        """Open a stored file for reading (used by the worker pipeline)."""
         return self.path(stored_name).open("rb")
 
     def read(self, stored_name: str) -> bytes:
         return self.path(stored_name).read_bytes()
 
-    # ------------------------------------------------------------------
-    # atomic streaming writes (API side)
-    # ------------------------------------------------------------------
+    # --- atomic streaming writes ---------------------------------------
     async def write_temp(self, chunks: AsyncIterator[bytes]) -> tuple[Path, int]:
-        """Stream ``chunks`` into a unique temporary file.
+        """Stream ``chunks`` to a temp file; return ``(temp_path, size)``.
 
-        Returns ``(temp_path, size)``. Raises EmptyFileError / FileTooLargeError
-        before the caller can commit anything to the database.
+        Raises EmptyFileError/FileTooLargeError before the caller commits
+        anything; nothing is left behind on failure.
         """
-        import uuid
-
         tmp_path = self.root / f".upload-{uuid.uuid4().hex}.part"
         size = 0
         try:
@@ -83,11 +75,9 @@ class LocalStorage:
         if size == 0:
             tmp_path.unlink(missing_ok=True)
             raise EmptyFileError()
-
         return tmp_path, size
 
     def commit(self, temp_path: Path, stored_name: str) -> Path:
-        """Atomically move a finished temp file to its final name."""
         final = self._resolve(stored_name)
         try:
             temp_path.replace(final)

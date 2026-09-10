@@ -2,7 +2,7 @@
 
 import pytest
 
-from src import scanner
+from src.domain import scanning as scanner
 
 TOKEN = b"/Type /Page"
 
@@ -92,7 +92,7 @@ def test_pdf_metadata_counts_tokens(tmp_path):
 
 def test_pdf_metadata_token_crosses_chunk_boundary(tmp_path, monkeypatch):
     """The classic pitfall: a token split across a chunk boundary must still count."""
-    monkeypatch.setattr(scanner, "_SCAN_CHUNK_SIZE", 7)
+    monkeypatch.setattr(scanner, "SCAN_CHUNK_SIZE", 7)
     # token starts 5 bytes before a chunk boundary, i.e. it straddles two reads
     content = b"x" * 5 + TOKEN + b"y" * 20
     path = tmp_path / "sample.pdf"

@@ -1,7 +1,7 @@
 services:
   backend:
     build: ./backend
-    command: uvicorn src.main:app --host 0.0.0.0 --reload --port 8000
+    command: uvicorn src.presentation.app:app --host 0.0.0.0 --reload --port 8000
     container_name: backend
     volumes:
       - ./backend:/backend

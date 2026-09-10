@@ -1,10 +1,7 @@
-"""Application configuration.
+"""Application configuration (core layer).
 
-All runtime settings live here and are loaded from environment variables
-(e.g. POSTGRES_HOST, REDIS_URL) or overridable programmatically (used in tests).
-The previous version assembled a DB URL from ``os.environ`` at import time and
-created SQLAlchemy engines as module-level side effects; that made the code
-impossible to configure or test in isolation.
+Single source of truth for runtime settings: env vars via pydantic-settings,
+full-URL override for tests. No engines/IO are created here.
 """
 
 from functools import lru_cache
@@ -32,7 +29,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # --- Storage --------------------------------------------------------
-    storage_dir: Path = Path(__file__).resolve().parent.parent / "storage" / "files"
+    storage_dir: Path = Path(__file__).resolve().parents[2] / "storage" / "files"
     max_upload_size: int = 512 * 1024 * 1024  # 512 MB
     chunk_size: int = 1024 * 1024  # 1 MB stream chunks
 
@@ -41,7 +38,7 @@ class Settings(BaseSettings):
 
     @property
     def async_database_url(self) -> str:
-        """URL used by the async FastAPI engine (asyncpg)."""
+        """URL used by the async engine (asyncpg / aiosqlite in tests)."""
         if self.database_url:
             return self.database_url
         creds = f"{self.postgres_user}:{quote_plus(self.postgres_password)}"
@@ -49,15 +46,6 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{creds}@{self.postgres_host}:"
             f"{self.postgres_port}/{self.postgres_db}"
         )
-
-    @property
-    def sync_database_url(self) -> str:
-        """URL used by the sync worker engine (psycopg)."""
-        url = self.database_url or self.async_database_url
-        prefix = "postgresql+asyncpg:"
-        if url.startswith(prefix):
-            return "postgresql+psycopg:" + url[len(prefix) :]
-        return url
 
 
 @lru_cache

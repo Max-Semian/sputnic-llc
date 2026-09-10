@@ -11,7 +11,7 @@ original business logic and guard the fixed bugs:
 
 from datetime import datetime, timedelta, timezone
 
-from src.models import Alert, StoredFile
+from src.domain.entities import Alert, StoredFile
 
 
 async def _upload(client, name="hello.txt", content=b"hello\n", mime="text/plain"):

@@ -6,8 +6,8 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from src.config import get_settings
-from src.models import Base
+from src.core.config import get_settings
+from src.domain.entities import Base
 
 # This is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

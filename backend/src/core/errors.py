@@ -1,8 +1,7 @@
-"""Domain-level errors.
+"""Domain-level errors (core layer).
 
-The application/service layer signals failures with these exceptions instead of
-raising FastAPI's ``HTTPException`` directly. The API layer maps them to HTTP
-responses, which keeps the domain free of transport concerns.
+The application layer signals failures with these exceptions instead of
+FastAPI's ``HTTPException``; the presentation layer maps them to HTTP responses.
 """
 
 

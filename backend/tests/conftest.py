@@ -2,15 +2,15 @@
 
 The whole backend is tested against an in-memory SQLite database
 (``aiosqlite`` + ``StaticPool``), so the suite needs no external services.
-Worker-phase tests run against a file-based SQLite via a patched sync engine.
 """
 
 import httpx
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 
-from src.db import make_async_session_factory
-from src.models import Base
+from src.core.config import Settings
+from src.domain.entities import Base
+from src.infrastructure.db import make_async_session_factory
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -29,12 +29,11 @@ async def session_factory():
 async def client(tmp_path, monkeypatch):
     """FastAPI app (fresh in-memory DB + temp storage) wrapped in AsyncClient.
 
-    ``enqueue_scan`` is stubbed: in unit tests the broker is not available and
-    scheduling is verified separately by inspecting recorded file ids.
+    ``enqueue_scan`` is stubbed: the broker is not available in unit tests and
+    scheduling is verified by inspecting recorded file ids.
     """
-    from src.api import routes as api_routes
-    from src.config import Settings
-    from src.main import create_app
+    from src.presentation import routes as api_routes
+    from src.presentation.app import create_app
 
     settings = Settings(
         database_url=TEST_DB_URL,

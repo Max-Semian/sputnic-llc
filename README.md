@@ -50,18 +50,20 @@ npm test
 
 ```
 backend/src/
-├── config.py      # Settings (pydantic-settings), сборка DSN
-├── db.py          # фабрики async/sync engine + session
-├── errors.py      # доменные ошибки (без HTTP)
-├── models.py      # ORM (StoredFile, Alert; FK с ON DELETE CASCADE)
-├── schemas.py     # Pydantic DTO + валидация
-├── storage.py     # потоковая запись с лимитом, атомарный commit
-├── scanner.py     # чистые правила скана + потоковые счётчики метаданных
-├── services.py    # прикладной слой (use-cases файлов и алертов)
-├── main.py        # фабрика FastAPI-приложения (DI через app.state)
-├── api/           # роуты и зависимости (тонкий слой)
-└── worker/        # Celery + sync-пайплайн (scan -> metadata -> alert)
+├── core/            # config.py (Settings), errors.py, enums.py
+├── domain/          # entities.py (ORM-сущности), scanning.py (правила + метаданные)
+├── application/     # ports.py (Protocol-интерфейсы), services/ (классы use-case)
+├── infrastructure/  # db.py, repositories.py (SQLAlchemy + UnitOfWork), storage.py, celery_app.py
+├── presentation/    # app.py (фабрика), deps.py (DI), schemas.py (DTO), routes.py
+└── worker/          # tasks.py — тонкие Celery-обёртки над сервисами
 ```
+
+Слои связаны через порты: приложение зависит от `Protocol`-интерфейсов
+(`FileRepository`, `AlertRepository`, `UnitOfWork`, `FileStorage`), а их
+реализации (SQLAlchemy, LocalStorage) живут в `infrastructure`. Сервисы —
+классы с внедрением зависимостей через конструктор (`FileService`,
+`AlertService`, `ProcessingService`), API и воркер переиспользуют одни и те же
+сервисы.
 
 Публичный API-контракт не изменился (пути, методы, поля, статусы).
 

@@ -1,10 +1,12 @@
+"""HTTP request/response schemas (presentation layer)."""
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class FileItem(BaseModel):
-    """Public representation of a stored file (same shape as before)."""
+    """Public representation of a stored file (unchanged shape)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,11 +25,7 @@ class FileItem(BaseModel):
 
 
 class FileUpdate(BaseModel):
-    """PATCH payload.
-
-    ``title`` is length-validated so oversized values return HTTP 422 instead
-    of surfacing as a database error (HTTP 500).
-    """
+    """PATCH payload; length-validated -> HTTP 422 instead of a DB 500."""
 
     title: str = Field(min_length=1, max_length=255)
 
@@ -40,4 +38,3 @@ class AlertItem(BaseModel):
     level: str
     message: str
     created_at: datetime
-
