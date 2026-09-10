@@ -7,6 +7,8 @@ react-bootstrap.
 
 ---
 
+**Правила разработки и реестр требований (для людей и LLM):** [METHODOLOGY.md](METHODOLOGY.md)
+
 ## Запуск (dev)
 
 ```bash
